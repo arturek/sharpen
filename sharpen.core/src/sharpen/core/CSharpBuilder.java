@@ -2237,30 +2237,38 @@ public class CSharpBuilder extends ASTVisitor {
 
 	private CSArrayCreationExpression unfoldMultiArray(ArrayType type, List dimensions, int dimensionIndex) {
 		final CSArrayCreationExpression expression = new CSArrayCreationExpression(mappedTypeReference(type));
-		expression.initializer(new CSArrayInitializerExpression());
-		int length = resolveIntValue(dimensions.get(dimensionIndex));
-		if (dimensionIndex < lastIndex(dimensions) - 1) {
-			for (int i = 0; i < length; ++i) {
-				expression.initializer().addExpression(
-				        unfoldMultiArray((ArrayType) type.getComponentType(), dimensions, dimensionIndex + 1));
+		Object constDimExpr = getConstantDimensionExpression(dimensions.get(dimensionIndex));
+		if (constDimExpr != null)
+		{
+			expression.initializer(new CSArrayInitializerExpression());
+			int length = ((Number) constDimExpr).intValue();
+			if (dimensionIndex < lastIndex(dimensions) - 1) {
+				for (int i = 0; i < length; ++i) {
+					expression.initializer().addExpression(
+					        unfoldMultiArray((ArrayType) type.getComponentType(), dimensions, dimensionIndex + 1));
+				}
+			} else {
+				Expression innerLength = (Expression) dimensions.get(dimensionIndex + 1);
+				CSTypeReferenceExpression innerType = mappedTypeReference(type.getComponentType());
+				for (int i = 0; i < length; ++i) {
+					expression.initializer().addExpression(
+					        new CSArrayCreationExpression(innerType, mapExpression(innerLength)));
+				}
 			}
-		} else {
-			Expression innerLength = (Expression) dimensions.get(dimensionIndex + 1);
-			CSTypeReferenceExpression innerType = mappedTypeReference(type.getComponentType());
-			for (int i = 0; i < length; ++i) {
-				expression.initializer().addExpression(
-				        new CSArrayCreationExpression(innerType, mapExpression(innerLength)));
-			}
+		}
+		else
+		{
+			
 		}
 		return expression;
 	}
 
-	private int lastIndex(List<?> dimensions) {
-		return dimensions.size() - 1;
+	private Object getConstantDimensionExpression(Object expression) {
+		return ((Expression) expression).resolveConstantExpressionValue();
 	}
 
-	private int resolveIntValue(Object expression) {
-		return ((Number) ((Expression) expression).resolveConstantExpressionValue()).intValue();
+	private int lastIndex(List<?> dimensions) {
+		return dimensions.size() - 1;
 	}
 
 	private CSArrayCreationExpression mapSingleArrayCreation(ArrayCreation node) {
