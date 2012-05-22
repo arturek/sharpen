@@ -2217,7 +2217,7 @@ public class CSharpBuilder extends ASTVisitor {
 			if (null != node.getInitializer()) {
 				notImplemented(node);
 			}
-			pushExpression(unfoldMultiArrayCreation(node));
+			unfoldMultiArrayCreation(node);
 		} else {
 			pushExpression(mapSingleArrayCreation(node));
 		}
@@ -2231,40 +2231,58 @@ public class CSharpBuilder extends ASTVisitor {
 	 * string[2], new string[2], new string[2] }, new string[][] { new
 	 * string[2], new string[2], new string[2] } }"
 	 */
-	private CSArrayCreationExpression unfoldMultiArrayCreation(ArrayCreation node) {
-		return unfoldMultiArray((ArrayType) node.getType().getComponentType(), node.dimensions(), 0);
+	private void unfoldMultiArrayCreation(ArrayCreation node) {
+		boolean allDimsConst = true;
+		for (int i = 0; i < node.dimensions().size() - 1; ++i)
+		{
+			if (getConstantDimensionExpression(node.dimensions().get(i)) == null)
+			{
+				allDimsConst = false;
+				break;
+			}
+		}
+		if (allDimsConst)
+		{
+			pushExpression(unfoldMultiArray((ArrayType) node.getType().getComponentType(), node.dimensions(), 0));
+		}
+		else
+		{
+			expandMultiArray((ArrayType) node.getType().getComponentType(), node.dimensions());
+		}
 	}
 
 	private CSArrayCreationExpression unfoldMultiArray(ArrayType type, List dimensions, int dimensionIndex) {
 		final CSArrayCreationExpression expression = new CSArrayCreationExpression(mappedTypeReference(type));
-		Object constDimExpr = getConstantDimensionExpression(dimensions.get(dimensionIndex));
-		if (constDimExpr != null)
-		{
-			expression.initializer(new CSArrayInitializerExpression());
-			int length = ((Number) constDimExpr).intValue();
-			if (dimensionIndex < lastIndex(dimensions) - 1) {
-				for (int i = 0; i < length; ++i) {
-					expression.initializer().addExpression(
-					        unfoldMultiArray((ArrayType) type.getComponentType(), dimensions, dimensionIndex + 1));
-				}
-			} else {
-				Expression innerLength = (Expression) dimensions.get(dimensionIndex + 1);
-				CSTypeReferenceExpression innerType = mappedTypeReference(type.getComponentType());
-				for (int i = 0; i < length; ++i) {
-					expression.initializer().addExpression(
-					        new CSArrayCreationExpression(innerType, mapExpression(innerLength)));
-				}
+		expression.initializer(new CSArrayInitializerExpression());
+		int length = resolveIntValue(dimensions.get(dimensionIndex));
+		if (dimensionIndex < lastIndex(dimensions) - 1) {
+			for (int i = 0; i < length; ++i) {
+				expression.initializer().addExpression(
+				        unfoldMultiArray((ArrayType) type.getComponentType(), dimensions, dimensionIndex + 1));
 			}
-		}
-		else
-		{
-			
+		} else {
+			Expression innerLength = (Expression) dimensions.get(dimensionIndex + 1);
+			CSTypeReferenceExpression innerType = mappedTypeReference(type.getComponentType());
+			for (int i = 0; i < length; ++i) {
+				expression.initializer().addExpression(
+				        new CSArrayCreationExpression(innerType, mapExpression(innerLength)));
+			}
 		}
 		return expression;
 	}
 
+	private void expandMultiArray(ArrayType type, List dimensions) {
+		final CSArrayCreationExpression expression = new CSArrayCreationExpression(mappedTypeReference(type));
+		pushExpression(expression);
+		// TODO For loop to create sub-arrays
+	}
+
 	private Object getConstantDimensionExpression(Object expression) {
 		return ((Expression) expression).resolveConstantExpressionValue();
+	}
+
+	private int resolveIntValue(Object expression) {
+		return ((Number) getConstantDimensionExpression(expression)).intValue();
 	}
 
 	private int lastIndex(List<?> dimensions) {
