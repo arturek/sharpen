@@ -2217,7 +2217,7 @@ public class CSharpBuilder extends ASTVisitor {
 			if (null != node.getInitializer()) {
 				notImplemented(node);
 			}
-			unfoldMultiArrayCreation(node);
+			pushExpression(unfoldMultiArrayCreation(node));
 		} else {
 			pushExpression(mapSingleArrayCreation(node));
 		}
@@ -2231,7 +2231,7 @@ public class CSharpBuilder extends ASTVisitor {
 	 * string[2], new string[2], new string[2] }, new string[][] { new
 	 * string[2], new string[2], new string[2] } }"
 	 */
-	private void unfoldMultiArrayCreation(ArrayCreation node) {
+	private CSArrayCreationExpression unfoldMultiArrayCreation(ArrayCreation node) {
 		boolean allDimsConst = true;
 		for (int i = 0; i < node.dimensions().size() - 1; ++i)
 		{
@@ -2243,11 +2243,11 @@ public class CSharpBuilder extends ASTVisitor {
 		}
 		if (allDimsConst)
 		{
-			pushExpression(unfoldMultiArray((ArrayType) node.getType().getComponentType(), node.dimensions(), 0));
+			return unfoldMultiArray((ArrayType) node.getType().getComponentType(), node.dimensions(), 0);
 		}
 		else
 		{
-			expandMultiArray((ArrayType) node.getType().getComponentType(), node.dimensions());
+			return createMultiArray(node);
 		}
 	}
 
@@ -2271,10 +2271,18 @@ public class CSharpBuilder extends ASTVisitor {
 		return expression;
 	}
 
-	private void expandMultiArray(ArrayType type, List dimensions) {
-		final CSArrayCreationExpression expression = new CSArrayCreationExpression(mappedTypeReference(type));
-		pushExpression(expression);
-		// TODO For loop to create sub-arrays
+	private CSArrayCreationExpression createMultiArray(ArrayCreation node) {
+		// TODO
+		for (int i = 0; i < node.dimensions().size() - 1; ++i)
+		{
+			String comment = String.format(
+					"// TODO Create for loop to initialize array dimension %d with %s array instances of size %s", 
+					i, node.dimensions().get(i), node.dimensions().get(i + 1));
+			addStatement(new CSExpressionStatement(node.getStartPosition(), new CSStringLiteralExpression(comment)));
+		}
+		
+		ArrayType type = (ArrayType) node.getType().getComponentType();		
+		return new CSArrayCreationExpression(mappedTypeReference(type));
 	}
 
 	private Object getConstantDimensionExpression(Object expression) {
