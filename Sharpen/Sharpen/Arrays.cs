@@ -60,5 +60,38 @@ namespace Sharpen
 		{
 			Array.Sort<T> (array, start, count, c);
 		}
-	}
+
+        public static T[][] Create<T>(int dim0, int dim1)
+        {
+            var array = new T[dim0][];
+            for (var k0 = 0; k0 < dim0; ++k0) array[k0] = new T[dim1];
+            return array;
+        }
+
+        public static T[][][] Create<T>(int dim0, int dim1, int dim2)
+        {
+            var array = new T[dim0][][];
+            for (var k0 = 0; k0 < dim0; ++k0)
+            {
+                array[k0] = new T[dim1][];
+                for (var k1 = 0; k1 < dim1; ++k1) array[k0][k1] = new T[dim2];
+            }
+            return array;
+        }
+
+        public static T[][][][] Create<T>(int dim0, int dim1, int dim2, int dim3)
+        {
+            var array = new T[dim0][][][];
+            for (var k0 = 0; k0 < dim0; ++k0)
+            {
+                array[k0] = new T[dim1][][];
+                for (var k1 = 0; k1 < dim1; ++k1)
+                {
+                    array[k0][k1] = new T[dim2][];
+                    for (var k2 = 0; k2 < dim2; ++k2) array[k0][k1][k2] = new T[dim3];
+                }
+            }
+            return array;
+        }
+    }
 }

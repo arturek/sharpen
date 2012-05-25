@@ -2273,7 +2273,7 @@ public class CSharpBuilder extends ASTVisitor {
 
 	private CSExpression createMultiArray(ArrayCreation node) {
 		Type type = node.getType().getElementType();		
-		String statement = String.format("Sharpen.Arrays.Create<%s>(%s", mappedTypeReference(type), node.dimensions().get(0));
+		String statement = String.format("Arrays.Create<%s>(%s", mappedTypeReference(type), node.dimensions().get(0));
 		for (int i = 1; i < node.dimensions().size(); ++i)
 		{
 			statement = String.format("%s, %s",statement, node.dimensions().get(i));
