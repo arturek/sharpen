@@ -4,12 +4,14 @@ namespace Sharpen
 	using System.Collections.Generic;
 	using System.IO;
 	using System.Threading;
+#if LINUX
 	using Mono.Unix;
-
+#endif
 	public class FilePath
 	{
+#if LINUX
 		static bool RunningOnLinux = !Environment.OSVersion.Platform.ToString ().StartsWith ("Win");
-		
+#endif		
 		private string path;
 		private static long tempCounter;
 
@@ -57,11 +59,12 @@ namespace Sharpen
 
 		public bool CanWrite ()
 		{
+#if LINUX
 			if (RunningOnLinux) {
 				var info = GetUnixFileInfo (path);
 				return info != null && info.CanAccess (Mono.Unix.Native.AccessModes.W_OK);
 			}
-			
+#endif			
 			return ((File.GetAttributes (path) & FileAttributes.ReadOnly) == 0);
 		}
 
@@ -104,6 +107,7 @@ namespace Sharpen
 		public bool Delete ()
 		{
 			try {
+#if LINUX
 				if (RunningOnLinux) {
 					var info = GetUnixFileInfo (path);
 					if (info != null && info.Exists) {
@@ -117,7 +121,7 @@ namespace Sharpen
 					}
 					return false;
 				}
-
+#endif
 				if (Directory.Exists (path)) {
 					if (Directory.GetFileSystemEntries (path).Length != 0)
 						return false;
@@ -143,11 +147,12 @@ namespace Sharpen
 
 		public bool Exists ()
 		{
+#if LINUX
 			if (RunningOnLinux) {
 				var info = GetUnixFileInfo (path);
 				return info != null && info.Exists;
 			}
-
+#endif
 			return (File.Exists (path) || Directory.Exists (path));
 		}
 
@@ -195,6 +200,7 @@ namespace Sharpen
 
 		public bool IsDirectory ()
 		{
+#if LINUX
 			try {
 				if (RunningOnLinux) {
 					var info = GetUnixFileInfo (path);
@@ -206,37 +212,41 @@ namespace Sharpen
 				// does not exist.
 				return false;
 			}
+#endif
 			return Directory.Exists (path);
 		}
 
 		public bool IsFile ()
 		{
+#if LINUX
 			if (RunningOnLinux) {
 				var info = GetUnixFileInfo (path);
 				return info != null && info.Exists && (info.FileType == FileTypes.RegularFile || info.FileType == FileTypes.SymbolicLink);
 			}
-
+#endif
 			return File.Exists (path);
 		}
 
 		public long LastModified ()
 		{
+#if LINUX
             if (RunningOnLinux) {
 				var info = GetUnixFileInfo (path);
 				return info != null && info.Exists ? info.LastWriteTimeUtc.ToMillisecondsSinceEpoch() : 0;
             }
-
+#endif
             var info2 = new FileInfo(path);
 			return info2.Exists ? info2.LastWriteTimeUtc.ToMillisecondsSinceEpoch() : 0;
 		}
 
 		public long Length ()
 		{
+#if LINUX
 			if (RunningOnLinux) {
 				var info = GetUnixFileInfo (path);
 				return info != null && info.Exists ? info.Length : 0;
 			}
-
+#endif
 			// If you call .Length on a file that doesn't exist, an exception is thrown
 			var info2 = new FileInfo (path);
 			return info2.Exists ? info2.Length : 0;
@@ -292,13 +302,14 @@ namespace Sharpen
 
 		private void MakeFileWritable (string file)
 		{
+#if LINUX
 			if (RunningOnLinux) {
 				var info = GetUnixFileInfo (file);
 				if (info != null)
 					info.FileAccessPermissions |= (FileAccessPermissions.GroupWrite | FileAccessPermissions.OtherWrite | FileAccessPermissions.UserWrite);
 				return;
 			}
-
+#endif
 			FileAttributes fileAttributes = File.GetAttributes (file);
 			if ((fileAttributes & FileAttributes.ReadOnly) != 0) {
 				fileAttributes &= ~FileAttributes.ReadOnly;
@@ -338,6 +349,7 @@ namespace Sharpen
 		public bool RenameTo (string name)
 		{
 			try {
+#if LINUX
 				if (RunningOnLinux) {
 					var symlink = GetUnixFileInfo (path) as UnixSymbolicLinkInfo;
 					if (symlink != null) {
@@ -345,7 +357,7 @@ namespace Sharpen
 						newFile.CreateSymbolicLinkTo (symlink.ContentsPath);
 					}
 				}
-
+#endif
 				File.Move (path, name);
 				return true;
 			} catch {
@@ -362,13 +374,14 @@ namespace Sharpen
 
 		public void SetReadOnly ()
 		{
+#if LINUX
 			if (RunningOnLinux) {
 				var info = GetUnixFileInfo (path);
 				if (info != null)
 					info.FileAccessPermissions &= ~ (FileAccessPermissions.GroupWrite | FileAccessPermissions.OtherWrite | FileAccessPermissions.UserWrite);
 				return;
 			}
-
+#endif
 			var fileAttributes = File.GetAttributes (this.path) | FileAttributes.ReadOnly;
 			File.SetAttributes (path, fileAttributes);
 		}
@@ -381,19 +394,21 @@ namespace Sharpen
 		// Don't change the case of this method, since ngit does reflection on it
 		public bool canExecute ()
 		{
+#if LINUX
 			if (RunningOnLinux) {
 				UnixFileInfo fi = new UnixFileInfo (path);
 				if (!fi.Exists)
 					return false;
 				return 0 != (fi.FileAccessPermissions & (FileAccessPermissions.UserExecute | FileAccessPermissions.GroupExecute | FileAccessPermissions.OtherExecute));
 			}
-
+#endif
 			return false;
 		}
 		
 		// Don't change the case of this method, since ngit does reflection on it
 		public bool setExecutable (bool exec)
 		{
+#if LINUX
 			if (RunningOnLinux) {
 				UnixFileInfo fi = new UnixFileInfo (path);
 				FileAccessPermissions perms = fi.FileAccessPermissions;
@@ -415,7 +430,7 @@ namespace Sharpen
 				fi.FileAccessPermissions = perms;
 				return true;
 			}
-
+#endif
 			return false;
 		}
 		
@@ -433,6 +448,7 @@ namespace Sharpen
 			return path;
 		}
 
+#if LINUX
 		static UnixFileSystemInfo GetUnixFileInfo (string path)
 		{
 			try {
@@ -446,7 +462,7 @@ namespace Sharpen
 				throw;
 			}
 		}
-		
+#endif		
 		static internal string pathSeparator {
 			get { return Path.PathSeparator.ToString (); }
 		}
