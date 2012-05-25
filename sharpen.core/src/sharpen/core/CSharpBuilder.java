@@ -2231,7 +2231,7 @@ public class CSharpBuilder extends ASTVisitor {
 	 * string[2], new string[2], new string[2] }, new string[][] { new
 	 * string[2], new string[2], new string[2] } }"
 	 */
-	private CSArrayCreationExpression unfoldMultiArrayCreation(ArrayCreation node) {
+	private CSExpression unfoldMultiArrayCreation(ArrayCreation node) {
 		boolean allDimsConst = true;
 		for (int i = 0; i < node.dimensions().size() - 1; ++i)
 		{
@@ -2271,18 +2271,15 @@ public class CSharpBuilder extends ASTVisitor {
 		return expression;
 	}
 
-	private CSArrayCreationExpression createMultiArray(ArrayCreation node) {
-		// TODO
-		for (int i = 0; i < node.dimensions().size() - 1; ++i)
+	private CSExpression createMultiArray(ArrayCreation node) {
+		Type type = node.getType().getElementType();		
+		String statement = String.format("Sharpen.Arrays.Create<%s>(%s", mappedTypeReference(type), node.dimensions().get(0));
+		for (int i = 1; i < node.dimensions().size(); ++i)
 		{
-			String comment = String.format(
-					"// TODO Create for loop to initialize array dimension %d with %s array instances of size %s", 
-					i, node.dimensions().get(i), node.dimensions().get(i + 1));
-			addStatement(new CSExpressionStatement(node.getStartPosition(), new CSStringLiteralExpression(comment)));
+			statement = String.format("%s, %s",statement, node.dimensions().get(i));
 		}
-		
-		ArrayType type = (ArrayType) node.getType().getComponentType();		
-		return new CSArrayCreationExpression(mappedTypeReference(type));
+		statement = statement.concat(")");
+		return new CSStringLiteralExpression(statement);
 	}
 
 	private Object getConstantDimensionExpression(Object expression) {
