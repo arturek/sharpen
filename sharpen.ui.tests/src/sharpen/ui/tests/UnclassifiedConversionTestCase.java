@@ -40,6 +40,10 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 		runResourceTestCase("Enum1");
 	}
 	
+	public void testSharpenEnum2() throws Throwable {
+		runResourceTestCase("Enum2");
+	}
+	
 	public void testObjectMethodsThroughGenericInterface() throws Throwable {
 		runResourceTestCase("ObjectMethods4");
 	}

@@ -160,28 +160,40 @@ public class CSharpBuilder extends ASTVisitor {
 
 	public boolean visit(EnumDeclaration node) {
 		if (!SharpenAnnotations.hasIgnoreAnnotation(node)) {
-			final CSEnum theEnum = new CSEnum(typeName(node));
-			mapVisibility(node, theEnum);
-			mapJavadoc(node, theEnum);
-			addType(node.resolveBinding(),theEnum);
-			
-			node.accept(new ASTVisitor() {
-				public boolean visit(EnumConstantDeclaration node) {
-					theEnum.addValue(identifier(node.getName()));
-					return false;
-				}
-
-				@Override
-				public boolean visit(MethodDeclaration node) {
-					if (node.isConstructor() && isPrivate(node)) {
-						return false;
-					}
-					unsupportedConstruct(node, "Enum can contain only fields and a private constructor.");
-					return false;
-				}
-			});
-			return false;
+			if(node.bodyDeclarations().isEmpty())
+			{
+				return convSimpleEnum(node);
+			}
+			else
+			{
+				new CSharpBuilder(CSharpBuilder.this).processTypeDeclaration(node);
+				return false;
+			}
 		}
+		return false;
+	}
+	
+	private boolean convSimpleEnum(EnumDeclaration node) {
+		final CSEnum theEnum = new CSEnum(typeName(node));
+		mapVisibility(node, theEnum);
+		mapJavadoc(node, theEnum);
+		addType(node.resolveBinding(),theEnum);
+		
+		node.accept(new ASTVisitor() {
+			public boolean visit(EnumConstantDeclaration node) {
+				theEnum.addValue(identifier(node.getName()));
+				return false;
+			}
+
+			@Override
+			public boolean visit(MethodDeclaration node) {
+				if (node.isConstructor() && isPrivate(node)) {
+					return false;
+				}
+				unsupportedConstruct(node, "Enum can contain only fields and a private constructor.");
+				return false;
+			}
+		});
 		return false;
 	}
 
@@ -353,7 +365,7 @@ public class CSharpBuilder extends ASTVisitor {
 		new NonStaticNestedClassBuilder(this, node);
 	}
 
-	protected CSTypeDeclaration processTypeDeclaration(TypeDeclaration node) {
+	protected CSTypeDeclaration processTypeDeclaration(AbstractTypeDeclaration node) {
 		CSTypeDeclaration type = mapTypeDeclaration(node);
 		
 		processDisabledType(node, isMainType(node) ? _compilationUnit : type);
@@ -364,15 +376,57 @@ public class CSharpBuilder extends ASTVisitor {
 		ITypeBinding typeBinding = node.resolveBinding();
 		addType(typeBinding, type);
 
-		mapSuperTypes(node, type);
+		TypeDeclaration tNode = node instanceof TypeDeclaration ? (TypeDeclaration)node : null;
+		
+		if(tNode != null)
+			mapSuperTypes(tNode, type);
 
 		mapVisibility(node, type);
 		adjustVisibility (typeBinding.getSuperclass(), type);
 		mapDocumentation(node, type);
-		processConversionJavadocTags(node, type);
+		if(tNode != null)
+			processConversionJavadocTags(tNode, type);
+		
+		if(node instanceof EnumDeclaration) {
+			EnumDeclaration eNode = (EnumDeclaration)node;
+			CSTypeReferenceExpression typeName = mappedTypeReference(typeBinding);
+			for(Object item : eNode.enumConstants()) {
+				EnumConstantDeclaration ecd = (EnumConstantDeclaration)item;
+				CSMethodInvocationExpression initializer = mapEnumInitializer(ecd, typeName);
+				mapArguments(initializer, ecd.arguments());
+				CSField field = new CSField(identifier(ecd.getName()), typeName, CSVisibility.Public, initializer);
+				field.addModifier(CSFieldModifier.Static);
+				field.addModifier(CSFieldModifier.Readonly);
+				type.addMember(field);
+			}
+		}
+		
 		mapMembers(node, type);
 
-		autoImplementCloneable(node, type);
+		if(node instanceof EnumDeclaration) {
+			EnumDeclaration eNode = (EnumDeclaration)node;
+			CSTypeReferenceExpression typeName = mappedTypeReference(typeBinding);
+			
+			CSArrayCreationExpression newArrayExpr = new CSArrayCreationExpression(typeName);
+			CSArrayInitializerExpression initializer = new CSArrayInitializerExpression();
+			for(Object item : eNode.enumConstants()) {
+				EnumConstantDeclaration ecd = (EnumConstantDeclaration)item;
+				initializer.addExpression(new CSReferenceExpression(identifier(ecd.getName())));
+			}
+			newArrayExpr.initializer(initializer);
+			
+			CSReturnStatement returnStatment = new CSReturnStatement(0, newArrayExpr);
+
+			CSMethod valuesMethod = new CSMethod("values");
+			valuesMethod.modifier(CSMethodModifier.Static);
+			valuesMethod.visibility(CSVisibility.Public);
+			valuesMethod.returnType(new CSArrayTypeReference(typeName, 1));
+			valuesMethod.body().addStatement(returnStatment);
+			type.addMember(valuesMethod);
+		}
+		
+		if(tNode != null)
+			autoImplementCloneable(tNode, type);
 		
 		moveInitializersDependingOnThisReferenceToConstructor(type);
 		
@@ -382,7 +436,38 @@ public class CSharpBuilder extends ASTVisitor {
 		return type;
 	}
 
-	private void processDisabledType(TypeDeclaration node, CSNode type) {
+	private CSMethodInvocationExpression mapEnumInitializer(EnumConstantDeclaration node, CSTypeReferenceExpression typeName) {
+		Configuration.MemberMapping mappedConstructor = effectiveMappingFor(node.resolveConstructorBinding());
+		if (null == mappedConstructor) {
+			return new CSConstructorInvocationExpression(typeName);
+		}
+		final String mappedName = mappedConstructor.name;
+		if (mappedName.length() == 0) {
+			pushExpression(mapExpression((Expression)node.arguments().get(0)));
+			return null;
+		}
+		if (mappedName.startsWith("System.Convert.To")) {
+			if (optimizeSystemConvert(mappedName, node)) {
+				return null;
+			}
+		}
+		return new CSMethodInvocationExpression(new CSReferenceExpression(methodName(mappedName)));
+	}
+
+	private boolean optimizeSystemConvert(String mappedConstructor, EnumConstantDeclaration node) {
+		String typeName = _configuration.getConvertRelatedWellKnownTypeName(mappedConstructor);
+		if (null != typeName) {
+			assert 1 == node.arguments().size();
+			Expression arg = (Expression) node.arguments().get(0);
+			if (arg.resolveTypeBinding() == resolveWellKnownType(typeName)) {
+				arg.accept(this);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void processDisabledType(AbstractTypeDeclaration node, CSNode type) {
 		final String expression = _configuration.conditionalCompilationExpressionFor(packageNameFor(node));
 		if (null != expression) {
 			compilationUnit().addEnclosingIfDef(expression);
@@ -391,7 +476,7 @@ public class CSharpBuilder extends ASTVisitor {
 		processDisableTags(node, type);
 	}
 
-	private String packageNameFor(TypeDeclaration node) {
+	private String packageNameFor(AbstractTypeDeclaration node) {
 		ITypeBinding type = node.resolveBinding();
 		return type.getPackage().getName();
 	}
@@ -577,11 +662,12 @@ public class CSharpBuilder extends ASTVisitor {
 		processPartialTagElement(node, type);
 	}
 
-	private CSTypeDeclaration mapTypeDeclaration(TypeDeclaration node) {
+	private CSTypeDeclaration mapTypeDeclaration(AbstractTypeDeclaration node) {
 		CSTypeDeclaration type = typeDeclarationFor(node);
 		type.startPosition(node.getStartPosition());
 		type.sourceLength(node.getLength());
-		mapTypeParameters(node.typeParameters(), type);
+		if(node instanceof TypeDeclaration)
+			mapTypeParameters(((TypeDeclaration)node).typeParameters(), type);
 		return checkForMainType(node, type);
 	}
 
@@ -602,19 +688,24 @@ public class CSharpBuilder extends ASTVisitor {
 		return tp;
 	}
 
-	private CSTypeDeclaration typeDeclarationFor(TypeDeclaration node) {		
+	private CSTypeDeclaration typeDeclarationFor(AbstractTypeDeclaration node) {		
 		final String typeName = typeName(node);
-		if (node.isInterface()) {
-			if (isValidCSInterface(node.resolveBinding()))
-				return new CSInterface(processInterfaceName(node));
+		
+		if(node instanceof EnumDeclaration)
+			return new CSClass(typeName, CSClassModifier.None);
+		
+		TypeDeclaration tNode = (TypeDeclaration)node;
+		if (tNode.isInterface()) {
+			if (isValidCSInterface(tNode.resolveBinding()))
+				return new CSInterface(processInterfaceName(tNode));
 			else
 				return new CSClass(typeName, CSClassModifier.Abstract);
 		}
 
-		if (isStruct(node)) {
+		if (isStruct(tNode)) {
 			return new CSStruct(typeName);
 		}
-		return new CSClass(typeName, mapClassModifier(node.getModifiers()));
+		return new CSClass(typeName, mapClassModifier(tNode.getModifiers()));
 	}
 
 	private String typeName(AbstractTypeDeclaration node) {
@@ -636,7 +727,7 @@ public class CSharpBuilder extends ASTVisitor {
 		return containsJavadoc(node, SharpenAnnotations.SHARPEN_STRUCT);
 	}
 
-	private CSTypeDeclaration checkForMainType(TypeDeclaration node, CSTypeDeclaration type) {
+	private CSTypeDeclaration checkForMainType(AbstractTypeDeclaration node, CSTypeDeclaration type) {
 		if (isMainType(node)) {
 			setCompilationUnitElementName(type.name());
 		}
@@ -652,7 +743,7 @@ public class CSharpBuilder extends ASTVisitor {
 		return interfaceName(name);
 	}
 
-	private boolean isMainType(TypeDeclaration node) {
+	private boolean isMainType(AbstractTypeDeclaration node) {
 		return node.isPackageMemberTypeDeclaration() && Modifier.isPublic(node.getModifiers());
 	}
 
@@ -730,12 +821,13 @@ public class CSharpBuilder extends ASTVisitor {
 		return _ast.getAST().resolveWellKnownType(typeName);
 	}
 
-	private void mapMembers(TypeDeclaration node, CSTypeDeclaration type) {
+	private void mapMembers(AbstractTypeDeclaration node, CSTypeDeclaration type) {
 		CSTypeDeclaration saved = _currentType;
 		_currentType = type;
 		try {
 			visit(node.bodyDeclarations());
-			createInheritedAbstractMemberStubs(node);
+			if(node instanceof TypeDeclaration)
+				createInheritedAbstractMemberStubs((TypeDeclaration)node);
 			flushInstanceInitializers(type, 0);
 		} finally {
 			_currentType = saved;

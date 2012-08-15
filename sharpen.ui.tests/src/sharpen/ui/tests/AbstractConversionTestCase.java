@@ -38,6 +38,8 @@ public abstract class AbstractConversionTestCase extends TestCase {
 	protected JavaProject _project;
 
 	protected void setUp() throws Exception {
+		if(Sharpen.getDefault() == null)
+			new Sharpen();	// it does setDefault internally
 		Sharpen.getDefault().configuration(configuration());
 		_project = new JavaProject();		
 	}

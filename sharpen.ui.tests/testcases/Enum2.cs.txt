@@ -1,0 +1,11 @@
+using Sharpen;
+
+public class Enum2
+{
+	public static readonly Enum2 FOO = new Enum2("a");
+	public static readonly Enum2 BAR = new Enum2("b");
+	
+	private Enum2(string name)
+	{
+	} 
+}

@@ -1,0 +1,7 @@
+public enum Enum2 {
+  FOO("a"),
+  BAR("b");
+  
+  private Enum2(String name) {
+  }
+}
