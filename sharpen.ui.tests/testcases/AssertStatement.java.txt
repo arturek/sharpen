@@ -1,0 +1,9 @@
+public class AssertStatement {
+	public void OnlyAssert() {
+		assert 1 == 0;
+	}
+	
+	public void AssertWithMessage() {
+		assert false: "message";
+	}
+}

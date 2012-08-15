@@ -1,0 +1,15 @@
+using Sharpen;
+using System.Diagnostics;
+
+public class AssertStatement
+{
+	public void OnlyAssert()
+	{
+		Debug.Assert(1 == 0);
+	}
+	
+	public void AssertWithMessage()
+	{
+		Debug.Assert(false, "message");
+	}
+}

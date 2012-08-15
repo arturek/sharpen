@@ -31,6 +31,10 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 		
 		runResourceTestCase(configuration, "HeaderSupport");
 	}
+
+	public void testAssertStatement() throws Throwable {
+		runResourceTestCase("AssertStatement");
+	}
 	
 	public void testVarArgs() throws Throwable {
 		runResourceTestCase("VarArgs");

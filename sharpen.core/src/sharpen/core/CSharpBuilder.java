@@ -1904,6 +1904,27 @@ public class CSharpBuilder extends ASTVisitor {
 		return Modifier.isStatic(node.getModifiers()) ? new CSTypeofExpression(new CSTypeReference(_currentType.name()))
 		        : new CSThisExpression();
 	}
+	
+	@Override
+	public boolean visit(AssertStatement node) {
+		Expression expression = node.getExpression();
+		
+		_compilationUnit.addUsing(new CSUsing ("System.Diagnostics"));
+		CSTypeReferenceExpression debugClassRef =
+				new CSTypeReference("Debug");
+		CSMemberReferenceExpression debugAssertMethodRef =
+				new CSMemberReferenceExpression(debugClassRef, "Assert");
+		
+		CSMethodInvocationExpression debugAssertMethodInvocation =
+				new CSMethodInvocationExpression(debugAssertMethodRef, mapExpression(expression));
+
+		if(node.getMessage() != null)
+			debugAssertMethodInvocation.addArgument(mapExpression(node.getMessage()));
+
+		_currentBlock.addStatement(debugAssertMethodInvocation);
+		
+		return false;
+	}
 
 	public boolean visit(ConstructorInvocation node) {
 		addChainedConstructorInvocation(new CSThisExpression(), node.arguments());
