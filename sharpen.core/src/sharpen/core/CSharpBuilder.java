@@ -417,7 +417,7 @@ public class CSharpBuilder extends ASTVisitor {
 			
 			CSReturnStatement returnStatment = new CSReturnStatement(0, newArrayExpr);
 
-			CSMethod valuesMethod = new CSMethod("values");
+			CSMethod valuesMethod = new CSMethod(methodName("values"));
 			valuesMethod.modifier(CSMethodModifier.Static);
 			valuesMethod.visibility(CSVisibility.Public);
 			valuesMethod.returnType(new CSArrayTypeReference(typeName, 1));

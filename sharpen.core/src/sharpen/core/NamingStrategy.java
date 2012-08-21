@@ -32,7 +32,7 @@ public class NamingStrategy {
 	static {
 		keywords("readonly", "params", "override", "event", "operator",
 				"internal", "base", "ref", "out", "as", "is", "in",
-				"object", "string", "bool", "using");
+				"object", "string", "bool", "using", "implicit", "explicit");
 		mapIdentifier("lock", "Lock");
 		mapIdentifier("delegate", "delegate_");
 	}
