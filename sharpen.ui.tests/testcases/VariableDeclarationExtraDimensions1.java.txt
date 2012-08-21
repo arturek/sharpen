@@ -1,0 +1,23 @@
+public class VariableDeclarationExtraDimensions1 {
+	int field[] = null;
+
+	private void inFor(int[] param) {
+		for(int arr[] = param; arr != null; ) {
+		}
+	}
+	
+	
+	private void inFor2() {
+		int[] arr = null;
+		for(int a1[] = null, a2[] = arr; a2 == null; ) {
+		}
+	}
+
+	private void inParam(int param[]) {
+	}
+
+    private void inLocalVar() {
+    	int arr[], arr2[][] = null, i = 0;
+    	int[] brr[], brr2[][] = null, b = null;
+    }
+}

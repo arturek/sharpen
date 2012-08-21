@@ -40,6 +40,10 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 		runResourceTestCase("VarArgs");
 	}
 	
+	public void testVariableDeclarationExtraDimensions1() throws Throwable {
+		runResourceTestCase("VariableDeclarationExtraDimensions1");
+	}
+	
 	public void testSharpenEnum() throws Throwable {
 		runResourceTestCase("Enum1");
 	}

@@ -1289,10 +1289,16 @@ public class CSharpBuilder extends ASTVisitor {
 
 		for (Object item : node.fragments()) {
 			VariableDeclarationFragment fragment = (VariableDeclarationFragment) item;
-			ITypeBinding saved = pushExpectedType(fieldType);
-			CSField field = mapFieldDeclarationFragment(node, fragment, typeName, visibility);
+			ITypeBinding thisFieldType = fieldType;
+			CSTypeReferenceExpression thisTypeName = typeName; 
+			if(fragment.getExtraDimensions() > 0) {
+					thisFieldType = fieldType.createArrayType(fragment.getExtraDimensions());
+					thisTypeName = mappedTypeReference(thisFieldType);
+			}
+			ITypeBinding saved = pushExpectedType(thisFieldType);
+			CSField field = mapFieldDeclarationFragment(node, fragment, thisTypeName, visibility);
 			popExpectedType(saved);
-			adjustVisibility (fieldType, field);
+			adjustVisibility (thisFieldType, field);
 			_currentType.addMember(field);
 		}
 
@@ -1960,11 +1966,31 @@ public class CSharpBuilder extends ASTVisitor {
 
 	public boolean visit(VariableDeclarationExpression node) {
 		CSTypeReferenceExpression mappedTypeReference = mappedTypeReference(node.getType());
+
+		int extraDimensions = Integer.MAX_VALUE;
+		for (Object f : node.fragments()) {
+			VariableDeclarationFragment variable = (VariableDeclarationFragment)f;
+			int ved = variable.getExtraDimensions();
+			if(ved < extraDimensions)
+				extraDimensions = ved;
+		}
+		
+		if (extraDimensions > 0 && extraDimensions < Integer.MAX_VALUE) {
+			if(mappedTypeReference instanceof CSArrayTypeReference) {
+				CSArrayTypeReference arrayTypeReference = (CSArrayTypeReference)mappedTypeReference;
+				mappedTypeReference = new CSArrayTypeReference(arrayTypeReference.elementType(),
+						arrayTypeReference.dimensions() + extraDimensions);
+			} else {
+				mappedTypeReference = new CSArrayTypeReference(mappedTypeReference, extraDimensions);
+			}
+		}
+
 		CSDeclarationExpression expr = new CSDeclarationExpression(mappedTypeReference);
+
 		for (Object f : node.fragments()) {
 			VariableDeclarationFragment variable = (VariableDeclarationFragment) f;
-			if(variable.getExtraDimensions() > 0)
-				warning(variable, "Extra dimensions are not supported");
+			if(variable.getExtraDimensions() != extraDimensions)
+				warning(variable, "Variable has unsupported extra dimensions");
 			expr.addFragment(formatVariableName(variable.resolveBinding()),
 					mapExpression(variable.getInitializer()));
 		}
@@ -1990,7 +2016,7 @@ public class CSharpBuilder extends ASTVisitor {
 
 	private CSVariableDeclaration createVariableDeclaration(IVariableBinding binding, CSExpression initializer) {
 		return new CSVariableDeclaration(formatVariableName(binding), mappedTypeReference(binding.getType()),
-		        initializer);
+				initializer);
 	}
 	
 	private String formatVariableName(IVariableBinding binding) {
