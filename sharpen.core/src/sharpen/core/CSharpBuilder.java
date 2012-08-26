@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 package sharpen.core;
 
 
+import java.security.DomainCombiner;
 import java.util.*;
 import java.util.regex.*;
 
@@ -292,23 +293,72 @@ public class CSharpBuilder extends ASTVisitor {
 				public void run() {
 	
 					final ITypeBinding binding = node.resolveBinding();
-					if (!binding.isNested()) {
-						processTypeDeclaration(node);
+					
+					if(processInterfaceWithFields(node, binding)) {
 						return;
 					}
 					
-					if (isNonStaticNestedType(binding)) {
-						processNonStaticNestedTypeDeclaration(node);
-						return;
-					}
-					
-					new CSharpBuilder(CSharpBuilder.this).processTypeDeclaration(node);
+					processMappableTypeDeclaration(node, binding);
 				}
 			});
 		} finally {
 			my(NameScope.class).leaveTypeDeclaration(node);
 		}
 
+		return false;
+	}
+	
+	private void processMappableTypeDeclaration(
+			final TypeDeclaration node, final ITypeBinding binding) {
+		if (!binding.isNested()) {
+			processTypeDeclaration(node);
+			return;
+		}
+		
+		if (isNonStaticNestedType(binding)) {
+			processNonStaticNestedTypeDeclaration(node);
+			return;
+		}
+		
+		new CSharpBuilder(CSharpBuilder.this).processTypeDeclaration(node);
+	}
+
+	private boolean processInterfaceWithFields(final TypeDeclaration node, final ITypeBinding binding) {
+		if(binding.isInterface()) {
+			IVariableBinding[] declaredFields = binding.getDeclaredFields();
+			if(declaredFields.length > 0)
+			{
+				String name = typeName(node);
+				CSClass constantsType = new CSClass(interfaceStaticsClassName(name, true, binding), CSClassModifier.Static);
+				addType(binding, constantsType);
+				constantsType.startPosition(node.getStartPosition());
+				constantsType.sourceLength(node.getLength());
+				mapTypeParameters(node.typeParameters(), constantsType);
+				
+				mapVisibility(node, constantsType);
+				adjustVisibility (binding.getSuperclass(), constantsType);
+				mapDocumentation(node, constantsType);
+				processConversionJavadocTags(node, constantsType);
+
+				CSTypeDeclaration saved = _currentType;
+				_currentType = constantsType;
+				try {
+					for (Object memberNodeObj : node.bodyDeclarations()) {
+						ASTNode memberNode = (ASTNode)memberNodeObj;
+						if(memberNode.getNodeType() != ASTNode.METHOD_DECLARATION) {
+							memberNode.accept(this);
+						}
+					}
+					//flushInstanceInitializers(type, 0);
+				} finally {
+					_currentType = saved;
+				}
+				
+				processMappableTypeDeclaration(node, binding);
+
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -825,10 +875,18 @@ public class CSharpBuilder extends ASTVisitor {
 		CSTypeDeclaration saved = _currentType;
 		_currentType = type;
 		try {
-			visit(node.bodyDeclarations());
-			if(node instanceof TypeDeclaration)
-				createInheritedAbstractMemberStubs((TypeDeclaration)node);
-			flushInstanceInitializers(type, 0);
+			if(type.isInterface()) {
+				for (Object obj : node.bodyDeclarations()) {
+					ASTNode astNode = (ASTNode)obj;
+					if(astNode.getNodeType() == ASTNode.METHOD_DECLARATION)
+						astNode.accept(this);
+				}
+			} else {
+				visit(node.bodyDeclarations());
+				if(node instanceof TypeDeclaration)
+					createInheritedAbstractMemberStubs((TypeDeclaration)node);
+				flushInstanceInitializers(type, 0);
+			}
 		} finally {
 			_currentType = saved;
 		}
@@ -3375,6 +3433,11 @@ public class CSharpBuilder extends ASTVisitor {
 						pushExpression(new CSMemberReferenceExpression(mappedTypeReference(cls), ident));
 						return false;
 					}
+					else if (cls.isInterface()) {
+						CSTypeReferenceExpression interfaceReference = mappedTypeReference(cls, true);
+						pushExpression(new CSMemberReferenceExpression(interfaceReference, ident));
+						return false;
+					}
 				}
 			}
 			pushExpression(new CSReferenceExpression(ident));
@@ -3470,7 +3533,15 @@ public class CSharpBuilder extends ASTVisitor {
 	}
 
 	private void pushMemberReferenceExpression(Name qualifier, String name) {
-		pushExpression(new CSMemberReferenceExpression(mapExpression(qualifier), name));
+		CSExpression expr = mapExpression(qualifier);
+		if(expr instanceof CSTypeReference) {
+			String typeName = ((CSTypeReference)expr).typeName();
+			String fixedTypeName = interfaceStaticsClassName(typeName, true, qualifier.resolveTypeBinding());
+			if(! fixedTypeName.equals(typeName)) {
+				expr = new CSTypeReference(fixedTypeName);
+			}
+		}
+		pushExpression(new CSMemberReferenceExpression(expr, name));
 	}
 
 	private IVariableBinding variableBinding(Name node) {
@@ -3715,12 +3786,6 @@ public class CSharpBuilder extends ASTVisitor {
 	private boolean isValidCSInterface (ITypeBinding type) {
 		if (type.getTypeDeclaration().getQualifiedName().equals("java.util.Iterator") || type.getTypeDeclaration().getQualifiedName().equals("java.lang.Iterable"))
 			return false;
-		if (type.getDeclaredFields().length != 0)
-			return false;
-		for (ITypeBinding ntype : type.getDeclaredTypes()) {
-			if (!isExtractedNestedType(ntype))
-				return false;
-		}
 		return true;
 	}
 
@@ -3802,6 +3867,10 @@ public class CSharpBuilder extends ASTVisitor {
     }
 
 	protected CSTypeReferenceExpression mappedTypeReference(ITypeBinding type) {
+		return mappedTypeReference(type, false);
+	}
+
+	protected CSTypeReferenceExpression mappedTypeReference(ITypeBinding type, boolean mapInterfaceStaticsClass) {
 		final ASTNode declaration = findDeclaringNode(type);
 		if (isMacroType(declaration)) {
 			return mappedMacroTypeReference(type, (TypeDeclaration) declaration);
@@ -3813,7 +3882,9 @@ public class CSharpBuilder extends ASTVisitor {
 		if (type.isWildcardType()) {
 			return mappedWildcardTypeReference(type);
 		}
-		final CSTypeReference typeRef = new CSTypeReference(mappedTypeName(type));
+		String mappedName = mappedTypeName(type);
+		mappedName = interfaceStaticsClassName(mappedName, mapInterfaceStaticsClass, type);
+		final CSTypeReference typeRef = new CSTypeReference(mappedName);
 		if (isJavaLangClass(type)) {
 			return typeRef;
 		}
@@ -3821,6 +3892,52 @@ public class CSharpBuilder extends ASTVisitor {
 			typeRef.addTypeArgument(mappedTypeReference(arg));
 		}
 		return typeRef;
+	}
+	
+	private String interfaceStaticsClassName(String typeName,
+			boolean modifyLastPart, ITypeBinding type) {
+		if(!modifyLastPart && typeName.indexOf('.') < 0) {
+			return typeName;
+		} else {
+			String[] parts = typeName.split("\\.");
+			int start = parts.length - 1;
+			if(!modifyLastPart) {
+				start--;
+				type = type.getDeclaringClass();
+			}
+			for(int i = start; i >= 0; i--) {
+				if(type != null && type.isInterface()) {
+					type = type.getDeclaringClass();
+					parts[i] = interfaceStaticsClassNameGen(parts[i]);
+				}
+			}
+			
+			StringBuilder sb = new StringBuilder();
+			boolean addDot = false;
+			for(String name : parts) {
+				if(addDot)
+					sb.append('.');
+				else
+					addDot = true;
+				
+				sb.append(name);
+			}
+			
+			return sb.toString();
+		}
+	}
+	
+	private String interfaceStaticsClassNameGen(String name) {
+		if(name.length() > 2
+				&& name.charAt(0) == 'I'
+				&& Character.isUpperCase(name.charAt(1)))
+			name = name.substring(1);
+
+		String suffix = "Constants";
+		if(!name.endsWith(suffix))
+			return name + suffix;
+		else
+			return name;
 	}
 
 	private boolean isJavaLangClass(ITypeBinding type) {

@@ -1,0 +1,19 @@
+using Sharpen;
+
+internal static class FooWithFieldsConstants
+{
+	public const int BAR = 5;
+}
+
+internal interface IFooWithFields
+{
+	int method(int d);
+}
+
+internal class FooClass : IFooWithFields
+{
+	public virtual int method(int d)
+	{
+		return d + FooWithFieldsConstants.BAR;
+	}
+}

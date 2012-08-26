@@ -1,0 +1,13 @@
+interface IFooInterfaceInInterface {
+	int BAR = 2;
+	interface IInner {
+		int FOO = 3;
+		int method(int d);
+	}
+}
+
+class Impl implements IFooInterfaceInInterface.IInner {
+	public int method(int d) {
+		return d + IFooInterfaceInInterface.BAR + FOO;
+	}
+}

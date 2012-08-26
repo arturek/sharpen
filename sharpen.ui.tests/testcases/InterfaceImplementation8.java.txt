@@ -1,0 +1,10 @@
+interface IFooWithFields {
+	int BAR = 5;
+	int method(int d); 
+}
+
+class FooClass implements IFooWithFields {
+	public int method(int d) {
+		return d + BAR;
+	}
+}

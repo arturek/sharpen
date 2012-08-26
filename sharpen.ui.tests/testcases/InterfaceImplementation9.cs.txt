@@ -1,0 +1,29 @@
+using Sharpen;
+
+internal static class FooInterfaceInInterfaceConstants
+{
+	public const int BAR = 2;
+
+	internal static class InnerConstants
+	{
+		public const int FOO = 3;
+	}
+
+	internal interface IInner
+	{
+		int method(int d);
+	}
+}
+
+internal interface IFooInterfaceInInterface
+{
+}
+
+internal class Impl : FooInterfaceInInterfaceConstants.IInner
+{
+	public virtual int method(int d)
+	{
+		return d + FooInterfaceInInterfaceConstants.BAR + FooInterfaceInInterfaceConstants.InnerConstants
+			.FOO;
+	}
+}
