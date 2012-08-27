@@ -326,7 +326,7 @@ public class CSharpBuilder extends ASTVisitor {
 	private boolean processInterfaceWithFields(final TypeDeclaration node, final ITypeBinding binding) {
 		if(binding.isInterface()) {
 			IVariableBinding[] declaredFields = binding.getDeclaredFields();
-			if(declaredFields.length > 0)
+			if(declaredFields.length > 0 || binding.getDeclaredTypes().length > 0)
 			{
 				String name = typeName(node);
 				CSClass constantsType = new CSClass(interfaceStaticsClassName(name, true, binding), CSClassModifier.Static);
