@@ -1369,7 +1369,7 @@ public class CSharpBuilder extends ASTVisitor {
 		if (isConstField(node, fragment)) {
 			field.addModifier(CSFieldModifier.Const);
 		} else {
-			processFieldModifiers(field, node.getModifiers());
+			processFieldModifiers(field, node.getModifiers(), fragment.resolveBinding().getDeclaringClass().isInterface());
 		}
 		mapDocumentation(node, field);
 		mapAnnotations(node, field);
@@ -1409,19 +1409,17 @@ public class CSharpBuilder extends ASTVisitor {
 	}
 
 	private boolean isConstField(FieldDeclaration node, VariableDeclarationFragment fragment) {
-		//
-		if (fragment.resolveBinding().getDeclaringClass().isInterface())
-			return true;
 		return Modifier.isFinal(node.getModifiers()) && node.getType().isPrimitiveType() && 
-			hasConstValue(fragment) && Modifier.isStatic(node.getModifiers());
+			hasConstValue(fragment) && (fragment.resolveBinding().getDeclaringClass().isInterface()
+					|| Modifier.isStatic(node.getModifiers()));
 	}
 
 	private boolean hasConstValue(VariableDeclarationFragment fragment) {
 		return null != fragment.resolveBinding().getConstantValue();
 	}
 
-	private void processFieldModifiers(CSField field, int modifiers) {
-		if (Modifier.isStatic(modifiers)) {
+	private void processFieldModifiers(CSField field, int modifiers, boolean inInterface) {
+		if (Modifier.isStatic(modifiers) || inInterface) {
 			field.addModifier(CSFieldModifier.Static);
 		}
 		if (Modifier.isFinal(modifiers)) {

@@ -1,0 +1,13 @@
+public class ConstReadOnlyField1 {
+    public static final char[] FieldReadOnly = "value".toCharArray();
+    public static final int FieldLenth = FieldReadOnly.length;
+    public static final int FieldConst = 4 + 3;
+    public static final int FieldConst2 = 3 + FieldConst;
+}
+
+interface IInInterface {
+    final char[] FieldReadOnly = "value".toCharArray();
+    final int FieldLenth = FieldReadOnly.length;
+    final int FieldConst = 4 + 3;
+    final int FieldConst2 = 3 + FieldConst;
+}

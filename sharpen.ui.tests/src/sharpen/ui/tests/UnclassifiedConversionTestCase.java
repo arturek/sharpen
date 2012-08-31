@@ -428,5 +428,9 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 	public void testIdentifierWithDolarSign() throws Throwable {
 	    runResourceTestCase("IdentifierWithDolarSign");
 	}
+
+	public void testConstReadOnlyField() throws Throwable {
+	    runResourceTestCase("ConstReadOnlyField1");
+	}
 }
 

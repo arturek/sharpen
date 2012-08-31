@@ -1,0 +1,27 @@
+using Sharpen;
+
+public class ConstReadOnlyField1
+{
+	public static readonly char[] FieldReadOnly = "value".ToCharArray();
+
+	public static readonly int FieldLenth = FieldReadOnly.Length;
+
+	public const int FieldConst = 4 + 3;
+
+	public const int FieldConst2 = 3 + FieldConst;
+}
+
+internal static class InInterfaceConstants
+{
+	public static readonly char[] FieldReadOnly = "value".ToCharArray();
+
+	public static readonly int FieldLenth = InInterfaceConstants.FieldReadOnly.Length;
+
+	public const int FieldConst = 4 + 3;
+
+	public const int FieldConst2 = 3 + InInterfaceConstants.FieldConst;
+}
+
+internal interface IInInterface
+{
+}
