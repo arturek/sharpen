@@ -52,7 +52,9 @@ public class NamingStrategy {
 	
 	public String identifier(String name) {
 		String mapped = _identifierMappings.get(name);
-		return mapped != null ? mapped : name;
+		if(mapped == null)
+			mapped = name;
+		return mapped.replace('$', '_');
 	}
 
 	public String methodName(String name) {

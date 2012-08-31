@@ -1,0 +1,9 @@
+class Other$class {
+	public static final int F$OO = 5; 
+}
+
+class Class$Name {
+	public static int method$Name() {
+		return Other$class.F$OO;
+	} 
+}

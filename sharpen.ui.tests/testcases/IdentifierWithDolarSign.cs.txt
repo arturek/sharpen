@@ -1,0 +1,14 @@
+using Sharpen;
+
+internal class Other_class
+{
+	public const int F_OO = 5;
+}
+
+internal class Class_Name
+{
+	public static int method_Name()
+	{
+		return Other_class.F_OO;
+	}
+}

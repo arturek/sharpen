@@ -424,5 +424,9 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 	public void testFieldMapping() throws Throwable {
 	    runResourceTestCase("FieldMapping");
 	}
+
+	public void testIdentifierWithDolarSign() throws Throwable {
+	    runResourceTestCase("IdentifierWithDolarSign");
+	}
 }
 
