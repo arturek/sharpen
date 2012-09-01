@@ -642,10 +642,13 @@ public class CSharpBuilder extends ASTVisitor {
 	
 	private void moveFieldInitializerToConstructors(CSField field, CSTypeDeclaration type, int index) {
 		final CSExpression initializer = field.initializer();
-		for (CSConstructor ctor : ensureConstructorsFor(type))
+		for (CSConstructor ctor : ensureConstructorsFor(type)) {
+			if(ctor.isStatic() || hasChainedThisInvocation(ctor))
+				continue;
 			ctor.body().addStatement(
 					index,
 					newAssignment(field, initializer));
+		}
 		field.initializer(null);
     }
 
@@ -655,9 +658,16 @@ public class CSharpBuilder extends ASTVisitor {
 
 	private Iterable<CSConstructor> ensureConstructorsFor(CSTypeDeclaration type) {
 		final List<CSConstructor> ctors = type.constructors();
-		if (!ctors.isEmpty())
-			return ctors;
-		
+		if (!ctors.isEmpty()) {
+			for(CSConstructor ctor : ctors) {
+				if(! ctor.isStatic())
+					return ctors;
+			}
+
+			addDefaultConstructor(type);
+
+			return type.constructors();
+		}
 		return Collections.singletonList(addDefaultConstructor(type));
     }
 

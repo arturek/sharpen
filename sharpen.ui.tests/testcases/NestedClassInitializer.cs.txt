@@ -1,0 +1,50 @@
+using Sharpen;
+
+public class NestedClassInitializer
+{
+	public class InnerClass
+	{
+		internal InnerClass(NestedClassInitializer _enclosing)
+		{
+			this._enclosing = _enclosing;
+		}
+
+		private readonly NestedClassInitializer _enclosing;
+	}
+}
+
+internal class OtherClass : NestedClassInitializer
+{
+	private static readonly int sField;
+
+	private NestedClassInitializer.InnerClass field;
+
+	static OtherClass()
+	{
+		sField = 4;
+	}
+
+	public OtherClass()
+	{
+		field = new NestedClassInitializer.InnerClass(this);
+	}
+}
+
+internal class OtherClass2 : NestedClassInitializer
+{
+	private NestedClassInitializer.InnerClass field;
+
+	public OtherClass2()
+	{
+		field = new NestedClassInitializer.InnerClass(this);
+	}
+
+	public OtherClass2(int d)
+	{
+		field = new NestedClassInitializer.InnerClass(this);
+	}
+
+	public OtherClass2(char d) : this(3)
+	{
+	}
+}

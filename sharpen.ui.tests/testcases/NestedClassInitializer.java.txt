@@ -1,0 +1,28 @@
+public class NestedClassInitializer {
+	public class InnerClass {
+	}
+}
+
+class OtherClass extends NestedClassInitializer {
+	private static final int sField;
+	private InnerClass field = new InnerClass();
+	
+	static {
+		sField = 4;
+	}
+}
+
+class OtherClass2 extends NestedClassInitializer {
+	private InnerClass field = new InnerClass();
+	
+	public OtherClass2() {
+	}
+	
+	public OtherClass2(int d) {
+	}
+
+	public OtherClass2(char d) {
+		this(3);
+	}
+}
+

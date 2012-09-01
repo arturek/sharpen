@@ -432,5 +432,9 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 	public void testConstReadOnlyField() throws Throwable {
 	    runResourceTestCase("ConstReadOnlyField1");
 	}
+	
+	public void testNestedClassInitializer() throws Throwable {
+		runResourceTestCase("NestedClassInitializer");
+	}
 }
 
