@@ -1419,9 +1419,9 @@ public class CSharpBuilder extends ASTVisitor {
 	}
 
 	private boolean isConstField(FieldDeclaration node, VariableDeclarationFragment fragment) {
-		return Modifier.isFinal(node.getModifiers()) && node.getType().isPrimitiveType() && 
-			hasConstValue(fragment) && (fragment.resolveBinding().getDeclaringClass().isInterface()
-					|| Modifier.isStatic(node.getModifiers()));
+		return node.getType().isPrimitiveType() && hasConstValue(fragment)
+			&& (fragment.resolveBinding().getDeclaringClass().isInterface()
+					|| (Modifier.isFinal(node.getModifiers()) && Modifier.isStatic(node.getModifiers())));
 	}
 
 	private boolean hasConstValue(VariableDeclarationFragment fragment) {

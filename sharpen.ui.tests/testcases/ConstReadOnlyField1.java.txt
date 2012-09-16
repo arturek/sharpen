@@ -8,6 +8,6 @@ public class ConstReadOnlyField1 {
 interface IInInterface {
     final char[] FieldReadOnly = "value".toCharArray();
     final int FieldLenth = FieldReadOnly.length;
-    final int FieldConst = 4 + 3;
+    int FieldConst = 4 + 3;
     final int FieldConst2 = 3 + FieldConst;
 }
