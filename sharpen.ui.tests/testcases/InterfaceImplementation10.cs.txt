@@ -1,0 +1,14 @@
+using Sharpen;
+
+internal static class FooConstants
+{
+	public const int BAR = 2;
+}
+
+internal class Impl
+{
+	public virtual int method(int d)
+	{
+		return d + FooConstants.BAR;
+	}
+}

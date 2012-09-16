@@ -245,6 +245,10 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 		runResourceTestCase("InterfaceImplementation9");
 	}
 	
+	public void testInterfaceNameConflict() throws Throwable {
+		runResourceTestCase("InterfaceImplementation10");
+	}
+	
 	public void testAbstractInterfaceImplementation() throws Throwable {
 		runResourceTestCase("InterfaceImplementation3");
 	}

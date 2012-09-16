@@ -354,8 +354,11 @@ public class CSharpBuilder extends ASTVisitor {
 					_currentType = saved;
 				}
 				
-				processMappableTypeDeclaration(node, binding);
-
+				if (binding.getDeclaredMethods().length != 0
+						|| !name.equals(constantsType.name())) {
+					processMappableTypeDeclaration(node, binding);
+				}
+				
 				return true;
 			}
 		}
@@ -866,9 +869,20 @@ public class CSharpBuilder extends ASTVisitor {
 		final ITypeBinding serializable = resolveWellKnownType("java.io.Serializable");
 		for (Object itf : node.superInterfaceTypes()) {
 			Type iface = (Type) itf;
-			if (iface.resolveBinding() == serializable) {
+			ITypeBinding binding = iface.resolveBinding();
+			if (binding == serializable) {
 				continue;
 			}
+
+			if (binding != null) {
+				String identifier = binding.getName();
+				if (identifier.charAt(0) != 'I'
+						&& identifier.endsWith("Constants")
+						&& binding.getDeclaredMethods().length == 0) {
+					continue;
+				}
+			}
+			
 			type.addBaseType(mappedTypeReference(iface));
 		}
 

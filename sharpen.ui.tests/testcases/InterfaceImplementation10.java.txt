@@ -1,0 +1,9 @@
+interface FooConstants {
+	int BAR = 2;
+}
+
+class Impl implements FooConstants {
+	public int method(int d) {
+		return d + BAR;
+	}
+}
