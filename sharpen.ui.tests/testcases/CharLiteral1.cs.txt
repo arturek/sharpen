@@ -1,4 +1,24 @@
+using Sharpen;
+
 public class CharLiteral1
 {
 	public const char A = 'A';
+
+	public const char B = '\0';
+
+	public const char C = '\x1';
+
+	public const char D = '\x7';
+
+	public const char E = '\xb';
+
+	public const char F = ' ';
+
+	public const char G = '"';
+
+	public const char H = '\'';
+
+	public const char I = '[';
+
+	public const char J = '\n';
 }

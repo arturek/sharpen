@@ -1,3 +1,12 @@
 public class CharLiteral1 {
 	public static final char A = 'A';
+	public static final char B = '\0';
+	public static final char C = '\1';
+	public static final char D = '\7';
+	public static final char E = '\13';
+	public static final char F = ' ';
+	public static final char G = '"';
+	public static final char H = '\'';
+	public static final char I = '[';
+	public static final char J = '\n';
 }

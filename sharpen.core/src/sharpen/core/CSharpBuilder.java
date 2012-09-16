@@ -2394,7 +2394,7 @@ public class CSharpBuilder extends ASTVisitor {
 	}
 
 	public boolean visit(CharacterLiteral node) {
-		CSExpression expr = new CSCharLiteralExpression(node.getEscapedValue());
+		CSExpression expr = new CSCharLiteralExpression(convertCharLiteral(node.charValue()));
 		if (expectingType("byte")) {
 			expr = new CSCastExpression(new CSTypeReference("byte"), new CSParenthesizedExpression(
 			        expr));
@@ -2403,6 +2403,41 @@ public class CSharpBuilder extends ASTVisitor {
 		return false;
 	}
 	
+	private String convertCharLiteral(char charLiteral) {
+		switch(charLiteral) {
+			case 0:
+				return "\'\\0\'";
+			case '\t':
+				return "\'\\t\'";
+			case '\n':
+				return "\'\\n\'";
+			case '\r':
+				return "\'\\r\'";
+			case '\b':
+				return "\'\\b\'";
+			case '\f':
+				return "\'\\f\'";
+			case '\\':
+				return "\'\\\\\'";
+			case '\'':
+				return "\'\\'\'";
+			default:
+				String escapedValue;
+				if(charLiteral < 256 && isPrintableChar(charLiteral))
+					escapedValue = String.valueOf(charLiteral);
+				else
+					escapedValue = "\\x" + String.format("%x", (int)charLiteral);
+				return "\'" + escapedValue + "\'";
+		}
+	}
+
+	public boolean isPrintableChar( char c ) {
+		Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
+		return (!Character.isISOControl(c)) &&
+				c != java.awt.event.KeyEvent.CHAR_UNDEFINED &&
+				block != null &&
+				block != Character.UnicodeBlock.SPECIALS;
+	}
 	private boolean expectingType (String name) {
 		return (_currentExpectedType != null && _currentExpectedType.getName().equals(name));
 	}
