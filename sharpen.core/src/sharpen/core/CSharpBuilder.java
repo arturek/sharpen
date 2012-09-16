@@ -1418,10 +1418,27 @@ public class CSharpBuilder extends ASTVisitor {
 		return mapExpression(fragment.getInitializer());
 	}
 
-	private boolean isConstField(FieldDeclaration node, VariableDeclarationFragment fragment) {
-		return node.getType().isPrimitiveType() && hasConstValue(fragment)
-			&& (fragment.resolveBinding().getDeclaringClass().isInterface()
-					|| (Modifier.isFinal(node.getModifiers()) && Modifier.isStatic(node.getModifiers())));
+	private boolean isConstField(FieldDeclaration node,
+			VariableDeclarationFragment fragment) {
+		boolean isStaticFinal = Modifier.isFinal(node.getModifiers())
+				&& Modifier.isStatic(node.getModifiers());
+		if (!isStaticFinal
+				&& !fragment.resolveBinding().getDeclaringClass().isInterface()) {
+			return false;
+		}
+		
+		Type type = node.getType();
+		boolean isPrimitiveOrString = type.isPrimitiveType();
+		if (!type.isPrimitiveType()
+				&& (type.isSimpleType() || type.isQualifiedType())) {
+			ITypeBinding binding = type.resolveBinding();
+			if (binding != null) {
+				String name = binding.getQualifiedName();
+				isPrimitiveOrString = name.equals("java.lang.String");
+			}
+		}
+
+		return isPrimitiveOrString && hasConstValue(fragment);
 	}
 
 	private boolean hasConstValue(VariableDeclarationFragment fragment) {
@@ -1432,7 +1449,7 @@ public class CSharpBuilder extends ASTVisitor {
 		if (Modifier.isStatic(modifiers) || inInterface) {
 			field.addModifier(CSFieldModifier.Static);
 		}
-		if (Modifier.isFinal(modifiers)) {
+		if (Modifier.isFinal(modifiers) || inInterface) {
 			field.addModifier(CSFieldModifier.Readonly);
 		}
 		if (Modifier.isTransient(modifiers)) {

@@ -2,6 +2,10 @@ using Sharpen;
 
 public class ConstReadOnlyField1
 {
+	public const string FieldString = "value";
+
+	public const string FieldString2 = FieldString + "2";
+
 	public static readonly char[] FieldReadOnly = "value".ToCharArray();
 
 	public static readonly int FieldLenth = FieldReadOnly.Length;
@@ -13,6 +17,10 @@ public class ConstReadOnlyField1
 
 internal static class InInterfaceConstants
 {
+	public const string FieldString = "value";
+
+	public const string FieldString2 = InInterfaceConstants.FieldString + "2";
+
 	public static readonly char[] FieldReadOnly = "value".ToCharArray();
 
 	public static readonly int FieldLenth = InInterfaceConstants.FieldReadOnly.Length;
