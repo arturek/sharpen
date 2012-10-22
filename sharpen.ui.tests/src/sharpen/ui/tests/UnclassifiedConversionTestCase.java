@@ -426,7 +426,14 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 	}
 	
 	public void testFieldMapping() throws Throwable {
-	    runResourceTestCase("FieldMapping");
+		runResourceTestCase("FieldMapping");
+	}
+	
+	public void testFieldNameMapping() throws Throwable {
+		final Configuration configuration = ConfigurationFactory.defaultConfiguration();
+		configuration.setNamingStrategy(PascalCaseNamingStrategy.DEFAULT);
+		configuration.mapField("FieldNameMapping.RENAMED_TEST_FIELD", "TestField");
+		runResourceTestCase(configuration, "FieldNameMapping");
 	}
 
 	public void testIdentifierWithDolarSign() throws Throwable {

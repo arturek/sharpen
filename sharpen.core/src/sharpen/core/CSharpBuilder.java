@@ -1425,7 +1425,8 @@ public class CSharpBuilder extends ASTVisitor {
     }
 
 	protected String fieldName(VariableDeclarationFragment fragment) {
-		return identifier(fragment.getName());
+		String name = mappedFieldName(fragment.getName());
+		return name != null ? name : identifier(fragment.getName());
 	}
 
 	protected CSExpression mapFieldInitializer(VariableDeclarationFragment fragment) {
@@ -3491,7 +3492,9 @@ public class CSharpBuilder extends ASTVisitor {
 		if (isTypeReference(node)) {
 			pushTypeReference(node.resolveTypeBinding());
 		} else if (_currentExpression == null){
-			String ident = mapVariableName (identifier (node));
+			String ident = mappedFieldName(node);
+			if(ident == null)
+				ident = mapVariableName (identifier (node));
 			IBinding b = node.resolveBinding();
 			IVariableBinding vb = b instanceof IVariableBinding ? (IVariableBinding) b : null;
 			if (vb != null) {

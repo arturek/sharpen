@@ -1,0 +1,14 @@
+public class FieldNameMapping {
+	static final int RENAMED_TEST_FIELD = 3;
+	
+	public int test(int val) {
+		return RENAMED_TEST_FIELD + 2;
+	}
+}
+
+class Sub {
+	public int test2(int val) {
+		return FieldNameMapping.RENAMED_TEST_FIELD;
+	}
+}
+

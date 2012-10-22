@@ -1,0 +1,19 @@
+using Sharpen;
+
+public class FieldNameMapping
+{
+	internal const int TestField = 3;
+
+	public virtual int Test(int val)
+	{
+		return TestField + 2;
+	}
+}
+
+internal class Sub
+{
+	public virtual int Test2(int val)
+	{
+		return FieldNameMapping.TestField;
+	}
+}
