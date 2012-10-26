@@ -32,7 +32,11 @@ public class NamingStrategy {
 	static {
 		keywords("readonly", "params", "override", "event", "operator",
 				"internal", "base", "ref", "out", "as", "is", "in",
-				"object", "string", "bool", "using", "implicit", "explicit");
+				"object", "string", "bool", "using", "implicit", "explicit",
+				"checked", "decimal", "delegate", "extern", "fixed", "foreach",
+				"lock", "namespace", "sbyte", "sealed", "sizeof", "stackalloc",
+				"struct", "typeof", "uint", "ulong", "unchecked", "unsafe",
+				"ushort", "virtual");
 		mapIdentifier("lock", "Lock");
 		mapIdentifier("delegate", "delegate_");
 	}
