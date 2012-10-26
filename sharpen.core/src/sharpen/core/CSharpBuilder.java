@@ -802,6 +802,10 @@ public class CSharpBuilder extends ASTVisitor {
 	}
 
 	private String processInterfaceName(TypeDeclaration node) {
+		String renamed = mappedTypeName(node.resolveBinding());
+		if (renamed != null) {
+			return renamed; 
+		}
 		String name = node.getName().getFullyQualifiedName();
 		return interfaceName(name);
 	}
