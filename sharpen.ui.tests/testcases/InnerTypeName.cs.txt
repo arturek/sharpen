@@ -1,0 +1,65 @@
+using Sharpen;
+
+public class InnerTypeName
+{
+	internal class Boo : InnerTypeName.Foo
+	{
+		internal class Boo2 : InnerTypeName.Foo, Other.Inner
+		{
+			internal virtual InnerTypeName.Boo.Boo2 method1()
+			{
+				return (InnerTypeName.Boo.Boo2)null;
+			}
+
+			internal virtual InnerTypeName.Boo method3()
+			{
+				return (InnerTypeName.Boo)null;
+			}
+
+			internal Boo2(Boo _enclosing)
+			{
+				this._enclosing = _enclosing;
+			}
+
+			private readonly Boo _enclosing;
+		}
+
+		internal virtual InnerTypeName.Boo.Boo2 method2()
+		{
+			return (InnerTypeName.Boo.Boo2)null;
+		}
+
+		internal Boo(InnerTypeName _enclosing)
+		{
+			this._enclosing = _enclosing;
+		}
+
+		private readonly InnerTypeName _enclosing;
+	}
+
+	internal interface Foo : Other.Inner
+	{
+	}
+
+	internal virtual InnerTypeName.Foo method1()
+	{
+		return (InnerTypeName.Foo)null;
+	}
+
+	internal virtual InnerTypeName.Boo.Boo2 method3()
+	{
+		return (InnerTypeName.Boo.Boo2)null;
+	}
+
+	internal virtual Other.Inner method2()
+	{
+		return (Other.Inner)null;
+	}
+}
+
+internal class Other
+{
+	internal interface Inner
+	{
+	}
+}

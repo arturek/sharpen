@@ -760,7 +760,7 @@ public class CSharpBuilder extends ASTVisitor {
 		TypeDeclaration tNode = (TypeDeclaration)node;
 		if (tNode.isInterface()) {
 			if (isValidCSInterface(tNode.resolveBinding()))
-				return new CSInterface(processInterfaceName(tNode));
+				return new CSInterface(typeName(tNode, true));
 			else
 				return new CSClass(typeName, CSClassModifier.Abstract);
 		}
@@ -772,6 +772,10 @@ public class CSharpBuilder extends ASTVisitor {
 	}
 
 	private String typeName(AbstractTypeDeclaration node) {
+		return typeName(node, false);
+	}
+	
+	private String typeName(AbstractTypeDeclaration node, Boolean isInterface) {
 		String renamed = annotatedRenaming(node);
 		if (renamed != null)
 			return renamed;
@@ -783,7 +787,10 @@ public class CSharpBuilder extends ASTVisitor {
 			else
 				return renamed;
 		}
-		return node.getName().toString();
+		renamed = node.getName().toString();
+		if(isInterface)
+			renamed = interfaceName(renamed);
+		return renamed;
 	}
 
 	private boolean isStruct(TypeDeclaration node) {
@@ -800,16 +807,7 @@ public class CSharpBuilder extends ASTVisitor {
 	private void setCompilationUnitElementName(String name) {
 		_compilationUnit.elementName(name + ".cs");
 	}
-
-	private String processInterfaceName(TypeDeclaration node) {
-		String renamed = mappedTypeName(node.resolveBinding());
-		if (renamed != null) {
-			return renamed; 
-		}
-		String name = node.getName().getFullyQualifiedName();
-		return interfaceName(name);
-	}
-
+	
 	private boolean isMainType(AbstractTypeDeclaration node) {
 		return node.isPackageMemberTypeDeclaration() && Modifier.isPublic(node.getModifiers());
 	}

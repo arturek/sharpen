@@ -447,5 +447,9 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 	public void testNestedClassInitializer() throws Throwable {
 		runResourceTestCase("NestedClassInitializer");
 	}
+	
+	public void testInnerTypeName() throws Throwable {
+		runResourceTestCase("InnerTypeName");
+	}
 }
 

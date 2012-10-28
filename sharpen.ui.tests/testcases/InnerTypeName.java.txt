@@ -1,0 +1,38 @@
+public class InnerTypeName {
+	class Boo implements Foo {
+		class Boo2 implements Foo, Other.Inner {
+			Boo2 method1() {
+				return (Boo2)null;
+			}
+			
+			Boo method3() {
+				return (Boo)null;
+			}
+		}
+		
+		Boo2 method2() {
+			return (Boo2)null;
+		}
+	}
+
+	interface Foo extends Other.Inner {
+	}
+	
+	Foo method1() {
+		return (Foo)null;
+	}
+	
+	Boo.Boo2 method3() {
+		return (Boo.Boo2)null;
+	}
+	
+	Other.Inner method2() {
+		return (Other.Inner)null;
+	}
+}
+
+class Other {
+	interface Inner {
+	}
+}
+
