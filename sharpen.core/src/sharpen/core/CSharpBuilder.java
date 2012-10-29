@@ -1735,8 +1735,11 @@ public class CSharpBuilder extends ASTVisitor {
 	
 	private String mappedMethodDeclarationName(MethodDeclaration node) {
 		final String mappedName = mappedMethodName(node);
-		if (null == mappedName || 0 == mappedName.length()|| mappedName.contains(".")) {
+		if (null == mappedName || 0 == mappedName.length()) {
 			return methodName(node.getName().toString());
+		} else if(mappedName.contains(".")) {
+			int lastDot = mappedName.lastIndexOf('.');
+			return mappedName.substring(lastDot + 1);
 		}
 		return mappedName;
 	}
