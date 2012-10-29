@@ -1,0 +1,10 @@
+using Sharpen;
+
+public class Literals
+{
+	public const double ONE = 1.0;
+
+	public const string UNICODE_ENC = "\"";
+
+	public const string CONST_EMPTY = "";
+}

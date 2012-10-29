@@ -122,7 +122,9 @@ class SharpenCommandLineParser extends CommandLineParser {
 		} else if (areEqual(arg, "-configurationClass")) {
 			_cmdLine.configurationClass = consumeNext();		
 		} else if (areEqual(arg, "-junitConversion")) {
-			_cmdLine.junitConversion = true;		
+			_cmdLine.junitConversion = true;
+		} else if (areEqual(arg, "-mapEmptyStringLiteral")) {
+			_cmdLine.mapEmptyStringLiterals = true;
 		} else {
 			illegalArgument(arg);
 		}

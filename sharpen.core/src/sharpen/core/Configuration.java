@@ -90,6 +90,8 @@ public abstract class Configuration {
 	
 	private boolean _junitConvert;
 	
+	private boolean _mapEmptyStringLiterals;
+	
 	private List<String> _fullyQualifiedTypes = new ArrayList<String>();
 	
 	private boolean _createProblemMarkers = false;
@@ -397,6 +399,14 @@ public abstract class Configuration {
 	
 	public boolean junitConversion () {
 		return _junitConvert;
+	}
+	
+	public void enableEmptyStringLiteralMapping() {
+		_mapEmptyStringLiterals = true;
+	}
+	
+	public boolean mapEmptyStringLiteral() {
+		return _mapEmptyStringLiterals;
 	}
 	
 	public void addFullyQualifiedTypeName(String name) {

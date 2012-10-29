@@ -121,6 +121,10 @@ public class SharpenApplication implements IApplication {
 			ods("JUnit conversion mode on.");
 			configuration.enableJUnitConversion();
 		}
+		if (_args.mapEmptyStringLiterals) {
+			ods("Empty String Literals Mapping mode is on.");
+			configuration.enableEmptyStringLiteralMapping();
+		}
 		if (_args.headerFile != null) {
 			ods("Header file: " + _args.headerFile);
 			configuration.setHeader(IO.readFile(new File(_args.headerFile)));

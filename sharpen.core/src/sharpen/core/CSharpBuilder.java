@@ -775,7 +775,7 @@ public class CSharpBuilder extends ASTVisitor {
 		return typeName(node, false);
 	}
 	
-	private String typeName(AbstractTypeDeclaration node, Boolean isInterface) {
+	private String typeName(AbstractTypeDeclaration node, boolean isInterface) {
 		String renamed = annotatedRenaming(node);
 		if (renamed != null)
 			return renamed;
@@ -1459,7 +1459,11 @@ public class CSharpBuilder extends ASTVisitor {
 	}
 
 	private boolean hasConstValue(VariableDeclarationFragment fragment) {
-		return null != fragment.resolveBinding().getConstantValue();
+		Object constValue = fragment.resolveBinding().getConstantValue();
+		if(null != constValue) {
+			return !("".equals(constValue) && my(Configuration.class).mapEmptyStringLiteral());
+		}
+		return false;
 	}
 
 	private void processFieldModifiers(CSField field, int modifiers, boolean inInterface) {
@@ -2363,6 +2367,8 @@ public class CSharpBuilder extends ASTVisitor {
 	public boolean visit(NumberLiteral node) {
 
 		String token = node.getToken();
+		if(token.endsWith("."))
+			token = token + "0";
 		CSExpression literal = new CSNumberLiteralExpression(token);
 
 		if (expectingType ("byte") && token.startsWith("-")) {
@@ -2396,35 +2402,78 @@ public class CSharpBuilder extends ASTVisitor {
 	public boolean visit(StringLiteral node) {
 		String value = node.getLiteralValue();
 		if (value != null && value.length() == 0) {
-			pushExpression(new CSReferenceExpression("string.Empty"));
+			if(my(Configuration.class).mapEmptyStringLiteral())
+				pushExpression(new CSReferenceExpression("string.Empty"));
+			else
+				pushExpression(new CSStringLiteralExpression("\"\""));
 		} else {
-			pushExpression(new CSStringLiteralExpression(fixEscapedNumbers (node.getEscapedValue())));
+			pushExpression(new CSStringLiteralExpression(convertStringLiteral(value)));
+		}
+		return false;
+	}
+
+	private static String convertStringLiteral(String stringLiteral) {
+		StringBuilder sb = new StringBuilder();
+		sb.append('"');
+		if (needsEscaping(stringLiteral)) {
+			for (int i = 0; i < stringLiteral.length(); i++) {
+				String s = convertStringChar(stringLiteral.charAt(i));
+				if (s == null)
+					sb.append(stringLiteral.charAt(i));
+				else
+					sb.append(s);
+			}
+		} else {
+			sb.append(stringLiteral);
+		}
+		sb.append('"');
+		return sb.toString();
+	}
+	
+	private static boolean needsEscaping(String s) {
+		for(int i = 0; i < s.length(); i++)
+			if(!isSafeChar(s.charAt(i)))
+				return true;
+		return false;
+	}
+	
+	private static boolean isSafeChar(char c) {
+		if(c >= 32 && c < 256 && isPrintableChar(c)) {
+			switch(c) {
+			case '\\':
+			case '"':
+				return false;
+			default:
+				return true; 
+			}
 		}
 		return false;
 	}
 	
-	String fixEscapedNumbers (String literal) {
-		StringBuffer s = new StringBuffer ();
-		for (int n=0; n<literal.length(); n++) {
-			if (literal.charAt(n) == '\\') {
-				int i = n + 1;
-				if (i < literal.length() && literal.charAt(i) == '\\') {
-					s.append("\\\\");
-					n = i;
-					continue;
-				}
-				while (i < literal.length() && Character.isDigit(literal.charAt(i)))
-					i++;
-				if (i != n + 1) {
-					int num = Integer.parseInt(literal.substring(n + 1, i));
-					s.append("\\x" + Integer.toHexString(num));
-					n = i - 1;
-					continue;
-				}
-			}
-			s.append(literal.charAt(n));
+	private static String convertStringChar(char c) {
+		switch(c) {
+		case 0:
+			return "\\0";
+		case '\t':
+			return "\\t";
+		case '\n':
+			return "\\n";
+		case '\r':
+			return "\\r";
+		case '\b':
+			return "\\b";
+		case '\f':
+			return "\\f";
+		case '\\':
+			return "\\\\";
+		case '"':
+			return "\\\"";
+		default:
+			if(c >= 32 && c < 256 && isPrintableChar(c))
+				return null;
+			else
+				return "\\u" + String.format("%04x", (int)c);
 		}
-		return s.toString();
 	}
 
 	public boolean visit(CharacterLiteral node) {
@@ -2437,7 +2486,7 @@ public class CSharpBuilder extends ASTVisitor {
 		return false;
 	}
 	
-	private String convertCharLiteral(char charLiteral) {
+	private static String convertCharLiteral(char charLiteral) {
 		switch(charLiteral) {
 			case 0:
 				return "\'\\0\'";
@@ -2457,7 +2506,7 @@ public class CSharpBuilder extends ASTVisitor {
 				return "\'\\'\'";
 			default:
 				String escapedValue;
-				if(charLiteral < 256 && isPrintableChar(charLiteral))
+				if(charLiteral >= 32 && charLiteral < 256 && isPrintableChar(charLiteral))
 					escapedValue = String.valueOf(charLiteral);
 				else
 					escapedValue = "\\x" + String.format("%x", (int)charLiteral);
@@ -2465,7 +2514,7 @@ public class CSharpBuilder extends ASTVisitor {
 		}
 	}
 
-	public boolean isPrintableChar( char c ) {
+	public static boolean isPrintableChar( char c ) {
 		Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
 		return (!Character.isISOControl(c)) &&
 				c != java.awt.event.KeyEvent.CHAR_UNDEFINED &&

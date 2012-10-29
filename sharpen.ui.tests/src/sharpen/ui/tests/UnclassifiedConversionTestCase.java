@@ -451,5 +451,9 @@ public class UnclassifiedConversionTestCase extends AbstractConversionTestCase {
 	public void testInnerTypeName() throws Throwable {
 		runResourceTestCase("InnerTypeName");
 	}
+	
+	public void testLiterals() throws Throwable {
+		runResourceTestCase("Literals");
+	}
 }
 
